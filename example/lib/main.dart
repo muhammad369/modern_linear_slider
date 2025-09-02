@@ -54,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ModernLinearSlider(
                 backgroundColor: Colors.black26,
                 foregroundColor: Colors.blueAccent,
-                disabledColor: Colors.indigoAccent,
+                disabledColor: Colors.black38,
                 value: val.toDouble(),
                 onValueChanging: (i) {
                   setState(() {
