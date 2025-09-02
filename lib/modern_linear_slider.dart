@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 class _Painter extends CustomPainter {
-  int value;
+  double value;
   Color backgroundColor, activeColor;
   bool ltr;
 
@@ -14,6 +14,8 @@ class _Painter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    double valuePosition = value * size.width / 100;
+
     final backgroundPaint = Paint()
       ..color = backgroundColor
       ..style = PaintingStyle.fill;
@@ -36,6 +38,15 @@ class _Painter extends CustomPainter {
 
     canvas.save();
 
+    canvas.clipRect(
+      Rect.fromLTWH(
+        ltr ? 0 : size.width - valuePosition,
+        0,
+        valuePosition,
+        size.height,
+      ),
+    );
+
     // draw the foreground
     canvas.drawRRect(
       RRect.fromLTRBR(
@@ -48,31 +59,22 @@ class _Painter extends CustomPainter {
       activePaint,
     );
 
-    canvas.clipRect(
-      Rect.fromLTWH(
-        ltr ? value.toDouble() : 0,
-        0,
-        size.width - value.toDouble(),
-        size.height,
-      ),
-    );
-
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return (oldDelegate as _Paint).value != value;
+    return (oldDelegate as _Painter).value != value;
   }
 }
 
 class ModernLinearSlider extends StatelessWidget {
   final double width, height;
   final Color backgroundColor, foregroundColor, disabledColor;
-  final int value;
-  final bool enabled;
-  final Function(int value) onValueChanging;
-  final Function(int value) onValueChanged;
+  final double value;
+  final bool enabled, ltr;
+  final Function(double value) onValueChanging;
+  final Function(double value) onValueChanged;
 
   const ModernLinearSlider({
     super.key,
@@ -81,6 +83,7 @@ class ModernLinearSlider extends StatelessWidget {
     required this.backgroundColor,
     required this.foregroundColor,
     required this.disabledColor,
+    this.ltr = true,
 
     /// value takes from 0 to 100
     required this.value,
@@ -91,33 +94,43 @@ class ModernLinearSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: enabled ? onPointerDown : null,
-      onPointerMove: enabled ? onPointerMove : null,
-      onPointerUp: enabled ? onPointerUp : null,
-      child: CustomPaint(
-        painter: _Painter(
-          backgroundColor: backgroundColor,
-          activeColor: enabled ? foregroundColor : disabledColor,
-          value: value,
+    return LayoutBuilder(
+      builder: (_, constraints) => Listener(
+        //onPointerDown: enabled ? onPointerDown : null,
+        onPointerMove: enabled
+            ? (event) => onPointerMove(event, constraints.maxWidth)
+            : null,
+        onPointerUp: enabled ? onPointerUp : null,
+        child: CustomPaint(
+          painter: _Painter(
+            backgroundColor: backgroundColor,
+            activeColor: enabled ? foregroundColor : disabledColor,
+            value: value,
+            ltr: ltr,
+          ),
+          child: SizedBox(width: width, height: height),
         ),
-        child: SizedBox(width: width, height: height),
       ),
     );
   }
 
-  void onPointerDown(PointerDownEvent event) {}
+  //void onPointerDown(PointerDownEvent event) {}
 
-  static final int _factor = 1;
-
-  void onPointerMove(PointerMoveEvent event) {
-    int newValue = value + (event.localDelta.dx.toInt() * _factor);
+  void onPointerMove(PointerMoveEvent event, double maxWidth) {
+    print('maxWidth===> $maxWidth');
+    print('dx===> ${event.delta.dx}');
+    //
+    double delta = (event.delta.dx / maxWidth);
+    print('delta ====> $delta');
+    double newValue = value + (ltr ? delta : -delta);
     if (newValue < 0) newValue = 0;
     if (newValue > 100) newValue = 100;
     onValueChanging(newValue);
+    //
   }
 
   void onPointerUp(PointerUpEvent event) {
     onValueChanged(value);
+    print('-----------');
   }
 }
