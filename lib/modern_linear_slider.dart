@@ -68,7 +68,7 @@ class _Painter extends CustomPainter {
   }
 }
 
-class ModernLinearSlider extends StatelessWidget {
+class ModernLinearSlider extends StatefulWidget {
   final double width, height;
   final Color backgroundColor, foregroundColor, disabledColor;
   final double value;
@@ -93,44 +93,64 @@ class ModernLinearSlider extends StatelessWidget {
   });
 
   @override
+  State<ModernLinearSlider> createState() => _ModernLinearSliderState();
+}
+
+class _ModernLinearSliderState extends State<ModernLinearSlider> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (_, constraints) => Listener(
-        //onPointerDown: enabled ? onPointerDown : null,
-        onPointerMove: enabled
+        onPointerDown: widget.enabled ? onPointerDown : null,
+        onPointerMove: widget.enabled
             ? (event) => onPointerMove(event, constraints.maxWidth)
             : null,
-        onPointerUp: enabled ? onPointerUp : null,
+        onPointerUp: widget.enabled ? onPointerUp : null,
         child: CustomPaint(
           painter: _Painter(
-            backgroundColor: backgroundColor,
-            activeColor: enabled ? foregroundColor : disabledColor,
-            value: value,
-            ltr: ltr,
+            backgroundColor: widget.backgroundColor,
+            activeColor: widget.enabled
+                ? widget.foregroundColor
+                : widget.disabledColor,
+            value: widget.value,
+            ltr: widget.ltr,
           ),
-          child: SizedBox(width: width, height: height),
+          child: SizedBox(width: widget.width, height: widget.height),
         ),
       ),
     );
   }
 
-  //void onPointerDown(PointerDownEvent event) {}
+  double startingX = 0, startingValue = 0;
+
+  void onPointerDown(PointerDownEvent event) {
+    startingX = event.position.dx;
+    startingValue = widget.value;
+    // print('startingX ===> ${startingX} = value==> $startingValue');
+  }
 
   void onPointerMove(PointerMoveEvent event, double maxWidth) {
-    print('maxWidth===> $maxWidth');
-    print('dx===> ${event.delta.dx}');
+    double dx = event.position.dx - startingX;
     //
-    double delta = (event.delta.dx / maxWidth);
-    print('delta ====> $delta');
-    double newValue = value + (ltr ? delta : -delta);
+    double delta = (dx / maxWidth);
+    //print('delta ====> $delta');
+    if (delta < 0.01 && delta > -0.01) return;
+
+    double newValue = startingValue + (widget.ltr ? delta : -delta) * 100;
+    //print('new value ===> $newValue');
     if (newValue < 0) newValue = 0;
     if (newValue > 100) newValue = 100;
-    onValueChanging(newValue);
+    widget.onValueChanging(newValue);
     //
   }
 
   void onPointerUp(PointerUpEvent event) {
-    onValueChanged(value);
-    print('-----------');
+    widget.onValueChanged(widget.value);
+    //print('-----------');
   }
 }
